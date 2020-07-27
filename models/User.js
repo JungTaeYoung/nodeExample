@@ -35,7 +35,7 @@ const userSchema = mongoose.Schema({
 })
 
 userSchema.pre('save', function( next ){
-    var user = this;
+    let user = this;
     // 비밀번호 암호화
     if(user.isModified('password')) {
         bcrypt.genSalt(saltRounds, function(err, salt){
@@ -60,12 +60,22 @@ userSchema.methods.comparePassword = function(plainPassword, cb) {
 }
 
 userSchema.methods.generateToken = function(cb) {
-    var user = this;
-    var token = jwt.sign(user._id.toHexString(), 'passToken')
+    let user = this;
+    let token = jwt.sign(user._id.toHexString(), 'passToken')
     user.token = token
     user.save(function(err, user) {
         if(err) return cb(err)
         cb(null, user)
+    })
+}
+
+userSchema.statics.findByToken = function(token, cb) {
+    let user =this;
+    jwt.verify(token, 'passToken', function(err ,decoded){
+        user.findOne({"_id": decoded, "token": token}, function(err, user){
+            if(err) return cb(err)
+            cb(null, user)
+        })
     })
 }
 
